@@ -10,11 +10,15 @@ check_sec -setup \
 	-imp_elaborate_opts { -vhdl } \
 
 #clock and reset setup
-clock clock -factor 1 -phase 1
-reset -expression {reset = '1'}
+clock clock [list {clock_rx} {Hermes_buffer_imp.clock} {Hermes_buffer_imp.clock_rx}] 1 1 -both_edges
+reset -expression {reset = '1' and Hermes_buffer_imp.reset = '1'}
 
 #instruct sec to automatically map unitialized registers
 check_sec -auto_map_reset_x_values on
+
+#enable additional engines (same as for fpv)
+# H is not allowed in conjunction with Ht or Hp
+set_engine_mode { Hp Ht Bm J Q3 U L R B N K AB D I AD M AM G C AG G2 C2 Hps Hts Tri QT TM}
 
 #map relevant internal signals for fev (commented out due 
 #to the tool does it automatically)
@@ -23,7 +27,14 @@ check_sec -auto_map_reset_x_values on
 #check_sec -map -spec {{Hermes_buffer_spec.data}} -imp {{Hermes_buffer_imp.data}}
 #check_sec -map -spec {{Hermes_buffer_spec.data_av}} -imp {{Hermes_buffer_imp.data_av}}
 
+#reset cannot be used as input signal
+#check_sec -map -spec {{Hermes_buffer_spec.reset}} -imp {Hermes_buffer_imp.reset}
+
 #assumptions?
+
+# get designs statistics
+get_design_info
+sanity_check -verbose -analyze all
 
 #update sec
 check_sec -generate_verification
